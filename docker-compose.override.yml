@@ -1,0 +1,13 @@
+version: '3.3'
+services:
+  wordpress-civicrm:
+    ports:
+      - "8080:80"
+    volumes:
+      - wp-data:/var/www/html
+  db:
+    volumes:
+      - mysql-data:/var/lib/mysql
+volumes:
+  wp-data:
+  mysql-data:

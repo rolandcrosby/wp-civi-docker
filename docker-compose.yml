@@ -1,0 +1,24 @@
+version: '3.3'
+services:
+  db:
+    image: mariadb:10.3.8
+    volumes:
+    - /data/mysql:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    env_file: secrets.env
+  wordpress-civicrm:
+    depends_on:
+      - db
+    build: ./wordpress-civicrm
+    volumes:
+    - /data/wordpress:/var/www/html
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    env_file: secrets.env
