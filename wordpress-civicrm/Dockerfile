@@ -1,8 +1,9 @@
-# CiviCRM 5 doesn't recomment PHP 7.2 yet
+# CiviCRM 5 doesn't recommend PHP 7.2 yet
 # https://docs.civicrm.org/sysadmin/en/latest/requirements/#php-version
 FROM php:7.1-apache
 
 # install the PHP extensions we need
+# CiviCRM needs curl, soap, mcrypt, and mbstring
 RUN set -ex; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
@@ -63,12 +64,10 @@ RUN set -ex; \
 ENV CIVICRM_VERSION 5.3.0
 ENV CIVICRM_SHA1 b31371bbac4261b792bc3436ab0ef00a6cacb4a7
 
-RUN apt-get update
-RUN apt-get install -y unzip
 RUN set -ex; \
 	curl -o civicrm.zip -fSL "https://download.civicrm.org/civicrm-${CIVICRM_VERSION}-wordpress.zip"; \
 	echo "$CIVICRM_SHA1 *civicrm.zip" | sha1sum -c -; \
-	unzip -d /usr/src/wordpress/wp-content/plugins civicrm.zip; \
+	php -r '$z = new ZipArchive(); $z->open("civicrm.zip"); $z->extractTo("/usr/src/wordpress/wp-content/plugins"); $z->close();' \
 	rm civicrm.zip; \
 	chown -R www-data:www-data /usr/src/wordpress/wp-content/plugins/civicrm
 
