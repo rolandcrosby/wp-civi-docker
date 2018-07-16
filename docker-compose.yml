@@ -13,6 +13,8 @@ services:
   wordpress-civicrm:
     depends_on:
       - db
+    ports:
+      - '80:80'
     build: ./wordpress-civicrm
     volumes:
     - /data/wordpress:/var/www/html

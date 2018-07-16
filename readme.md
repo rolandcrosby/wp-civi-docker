@@ -14,22 +14,36 @@ What's in this repo:
 
 How I've been running this so far:
 
+### get a machine on the internet
+
 - create a new hosted zone in AWS Route53 and point my domain's DNS to it
 - create an elastic IP for my virtual machine
 - create an A record in Route53 pointing the domain I want to use to the elastic IP
 - start an Ubuntu 16.04 LTS VM in AWS EC2 and assign it the elastic IP
+  - actually let's use debian
 - expose port 80 in the EC2 settings
+
+Lightsail appears to provide a nice interface to do all of the above.
+
+### get the machine ready to run mysql/wordpress/civicrm
+
 - SSH to the new VM and [install Docker CE][dockerinstall] and [docker-compose][dockercompose]
 - copy this repo to `/data/build` on the VM
-- install the systemd files to /etc/systemd/system, make them run at startup, and start them:
-    ```
-    systemctl enable docker-compose docker-compose-reload
-    systemctl start docker-compose
-    systemctl start docker-compose-reload
-    ```
+- if you're using existing data volumes for mariadb or wordpress, put it in `/data/mysql` or `/data/wordpress`
+- set up a `secrets.env` file in `/data/build`
+
+### turn everything on
+
+- install the systemd files to /etc/systemd/system, make them run at startup, and start them
+
+commands to execute all of the above are in the `setup_host.sh`
+
+### post install
 - go to the website in a browser
 - run the WordPress and CiviCRM installers
 - set up SMTP settings for CiviCRM (I'm using AWS Simple Email Service)
+  - make sure AWS actually enables outgoing mail from your domain
+  - for now, settings are hardcoded in a single-file plugin based on [this][wp-smtp-plugin]
 
 todo:
 - get cron working
@@ -50,3 +64,4 @@ todo:
 [wpdocker]: https://github.com/docker-library/wordpress/blob/b7198b18d92c016411c4bc3cdb31711065305605/php7.1/apache/Dockerfile
 [dockerinstall]: https://docs.docker.com/install/linux/docker-ce/ubuntu/
 [dockercompose]: https://github.com/docker/compose/releases
+[wp-smtp-plugin]: https://gist.github.com/butlerblog/7e4dbafcbc61b15505ee8ca90510f1e7#file-functions-php
