@@ -2,6 +2,7 @@
 # i don't think this is really a shell script,
 # more just a series of commands to run.
 # do your own error checking!
+echo "run these commands by hand!"; exit
 
 # install docker
 apt-get update
@@ -33,8 +34,21 @@ chmod +x /usr/local/bin/docker-compose
 # fetch this repo
 mkdir -p /data
 git clone https://github.com/rolandcrosby/wp-civi-docker.git /data/build
+cd /data/build
+rm docker-compose.override.yml
+
+# provide the proxy config template file 
+mkdir -p /data/proxy/certs
+
+# run this before the first time you run docker-compose up
+docker network create nginx-proxy
+
+# then start docker-compose
+docker-compose up --force-recreate -d
 
 # start the docker compose service
+cp /data/build/systemd/* /etc/systemd/system
+
 systemctl enable docker-compose docker-compose-reload.timer
 systemctl start docker-compose
 systemctl start docker-compose-reload.timer

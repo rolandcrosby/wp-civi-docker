@@ -1,5 +1,50 @@
-version: '3.3'
+version: '3'
+
 services:
+  nginx:
+    image: nginx:1.15.1
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /data/proxy/certs:/etc/nginx/certs
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true"
+
+  dockergen:
+    image: jwilder/docker-gen:0.7.3
+    container_name: nginx-proxy-gen
+    depends_on:
+      - nginx
+    command: -notify-sighup nginx-proxy -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /data/proxy/certs:/etc/nginx/certs
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /data/build/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: nginx-proxy-le
+    depends_on:
+      - nginx
+      - dockergen
+    environment:
+      NGINX_PROXY_CONTAINER: nginx-proxy
+      NGINX_DOCKER_GEN_CONTAINER: nginx-proxy-gen
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /data/proxy/certs:/etc/nginx/certs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   db:
     image: mariadb:10.3.8
     volumes:
@@ -10,17 +55,31 @@ services:
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
     env_file: secrets.env
+
   wordpress-civicrm:
     depends_on:
       - db
-    ports:
-      - '80:80'
     build: ./wordpress-civicrm
     volumes:
     - /data/wordpress:/var/www/html
     restart: always
+    expose:
+      - 80
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
+      VIRTUAL_HOST: example.com,www.example.com
+      LETSENCRYPT_HOST: example.com,www.example.com
+      LETSENCRYPT_EMAIL: youradmin@example.com
     env_file: secrets.env
+
+volumes:
+  conf:
+  vhost:
+  html:
+
+networks:
+  default:
+    external:
+      name: nginx-proxy
